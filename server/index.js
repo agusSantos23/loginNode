@@ -5,13 +5,13 @@ import { createClient } from "@libsql/client";
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 
+
 dotenv.config()
 
 export const turso = createClient({
     url: process.env.TURSO_DATABASE_URL,
     authToken: process.env.TURSO_AUTH_TOKEN,
 });
-
 
 await turso.execute(`
     CREATE TABLE IF NOT EXISTS users( 
@@ -20,8 +20,6 @@ await turso.execute(`
     pass VARCHAR NOT NULL,
     email VARCHAR NOT NULL
 )`)
-
-
 
 const app = express();
 
@@ -45,24 +43,25 @@ app.post('/',async(req, res)=>{
             sql: "SELECT * FROM users WHERE name = ?",
             args: [username]
         })
-        const {userId, userName, userPass, userEmail} = response
 
-        console.log(userId, userName, userPass, userEmail)
+        const user = response.rows[0]
+            
+        if(user){
+            
+            if(user.pass === password){
+                res.json({success: true, message: "Has iniciado sesion correctamente"})
+            }
+        }
+        
+        res.json({success: false, message: "No se a encontrado ningun usuario"})
+
         
     } catch (error) {
+
         console.log(error);
     }
 
     
-
-    if(username === 'agus' && password === "1234"){
-
-        res.json({success: true, message: "Login fue exitoso"})
-
-    }else{
-        res.json({success: false, message: "Login fue un fracaso"})
-        
-    }
 })
 
 app.get('/crear',(req,res)=>{
@@ -93,7 +92,7 @@ app.post('/crear', async (req,res)=>{
 })
 
 
-app.listen(port, ()=>{
+app.listen(port,()=>{
 
     console.log(`El servidor se levanto en el puerto ${port}`)
 })
