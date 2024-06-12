@@ -35,11 +35,25 @@ app.get('/',(req,res)=>{
     res.sendFile(process.cwd() + "/client/index.html")
 })
 
-app.post('/',(req, res)=>{
+app.post('/',async(req, res)=>{
 
     const {username, password} = req.body
 
-    console.log(username, password)
+    try {
+
+        const response = await turso.execute({
+            sql: "SELECT * FROM users WHERE name = ?",
+            args: [username]
+        })
+        const {userId, userName, userPass, userEmail} = response
+
+        console.log(userId, userName, userPass, userEmail)
+        
+    } catch (error) {
+        console.log(error);
+    }
+
+    
 
     if(username === 'agus' && password === "1234"){
 
@@ -60,13 +74,22 @@ app.post('/crear', async (req,res)=>{
     const {username, password, email} = req.body
 
     const newUserId = uuidv4()
+    try{
+        const response = await turso.execute({
+            sql:"INSERT INTO users (id,name,pass,email)VALUES(?,?,?,?)",
+            args:[newUserId,username,password,email]
+        })
 
-    const respuest = await turso.execute({
-        sql:"INSERT INTO users (id,name,pass,email)VALUES(?,?,?,?)",
-        args:[newUserId,username,password,email]
-    })
+        if(response){
+            res.json({success: true, message: "Se ha creado su cuenta correctamente"})
+        }else{
+            res.json({success: true, message: "No se pudo crear su usuario"})
+        }
+    }catch(e){
+        console.log(e)
+        res.status(500).json({ success: false, message: "Ocurrió un error en el servidor" });
+    }
 
-    console.log(respuest)
 })
 
 
