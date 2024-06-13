@@ -1,9 +1,11 @@
 import express from 'express'
-import bodyParser from 'body-parser';
+import bodyParser from 'body-parser'
+import bcrypt from 'bcrypt'
 
-import { createClient } from "@libsql/client";
-import dotenv from 'dotenv';
-import { v4 as uuidv4 } from 'uuid';
+import { SALT_ROUNDS } from './config.js'
+import { createClient } from "@libsql/client"
+import dotenv from 'dotenv'
+import { v4 as uuidv4 } from 'uuid'
 
 
 dotenv.config()
@@ -47,21 +49,23 @@ app.post('/',async(req, res)=>{
         const user = response.rows[0]
             
         if(user){
-            
-            if(user.pass === password){
-                res.json({success: true, message: "Has iniciado sesion correctamente"})
+            const resultHash = await bcrypt.compare(password, user.pass)
+            if(resultHash){
+                return res.json({success: true, message: "Has iniciado sesion correctamente"})
             }
         }
-        
-        res.json({success: false, message: "No se a encontrado ningun usuario"})
 
+        return res.json({success: false, message: "No se a encontrado ningun usuario"})
+
+        
         
     } catch (error) {
 
         console.log(error);
+        return res.status(500).json({ success: false, message: "Ocurrió un error en el servidor" });
+
     }
 
-    
 })
 
 app.get('/crear',(req,res)=>{
@@ -74,19 +78,35 @@ app.post('/crear', async (req,res)=>{
 
     const newUserId = uuidv4()
     try{
-        const response = await turso.execute({
-            sql:"INSERT INTO users (id,name,pass,email)VALUES(?,?,?,?)",
-            args:[newUserId,username,password,email]
+        //Comprobacion si existe nombre o correo en la bd
+        const responseExists = await turso.execute({
+            sql:"SELECT name,email FROM users WHERE name = ? OR email = ?",
+            args: [username, email]
         })
 
-        if(response){
-            res.json({success: true, message: "Se ha creado su cuenta correctamente"})
+        const user = responseExists.rows[0]
+        //Si no existe registra el usuario
+        if(user){
+            return res.json({success: false, message: "Ya existe un usuario con ese nombre o direcion de correo"})
+        } 
+
+        const passwordHash = bcrypt.hashSync(password, SALT_ROUNDS)
+
+        const responseNew = await turso.execute({
+            sql:"INSERT INTO users (id,name,pass,email)VALUES(?,?,?,?)",
+            args:[newUserId,username,passwordHash,email]
+        })
+
+        if(responseNew){
+            return res.json({success: true, message: "Se ha creado su cuenta correctamente"})
         }else{
-            res.json({success: true, message: "No se pudo crear su usuario"})
+            return res.json({success: true, message: "No se pudo crear su usuario"})
         }
+        
     }catch(e){
+
         console.log(e)
-        res.status(500).json({ success: false, message: "Ocurrió un error en el servidor" });
+        return res.status(500).json({ success: false, message: "Ocurrió un error en el servidor" });
     }
 
 })
@@ -94,5 +114,5 @@ app.post('/crear', async (req,res)=>{
 
 app.listen(port,()=>{
 
-    console.log(`El servidor se levanto en el puerto ${port}`)
+    console.log(`El servidor se levanto en el puerto http://localhost:${port}`)
 })
