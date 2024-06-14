@@ -85,7 +85,7 @@
 
             if(nameIn.value && passIn.value){
 
-                const envio = await fetch('/', {
+                await fetch('/', {
                     method:'POST',
                     headers:{
                         'Content-Type':'application/json'
@@ -96,9 +96,10 @@
                     })
                 })
 
-                const res = await envio.json();
-
-                respuesta.textContent = res.message
+                .then(response => response.json())
+                .then(data =>{
+                    data.success ? window.location.href = '/home' : respuesta.textContent = data.message
+                })
             }
 
 

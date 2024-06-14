@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+
+    <style>
+        :root{
+            color-scheme: light dark;
+        }
+        body{
+            height: 80vh;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-direction: column;
+            font-size: 2rem;
+        }
+
+        main{
+            text-align: center;
+        }
+        h1{
+            font-size: 3rem;
+        }
+
+        a{
+            color: white;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        input{
+            font-size: 2rem;
+            padding: 5px;
+        }
+
+        button{
+            font-size: 1.5rem;
+        }
+
+        
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/crear">Crear usuario</a>
+    </header>
+    <main>
+        <h1>Iniciar sesion</h1>
+        <form>
+            <input type="text" name="name" id="name" placeholder="Nombre">
+            <input type="text" name="pass" id="pass" placeholder="Contraseña">
+    
+            <button type="submit">Enviar</button>
+        </form>
+    
+    </main>
+
+    <aside>
+        <div></div>
+    </aside>
+    
+    <script>
+        const form = document.querySelector('form')
+
+        const nameIn = document.getElementById('name')
+        const passIn = document.getElementById('pass')
+
+
+        const respuesta = document.querySelector('div')
+
+        form.addEventListener('submit', async (e)=>{
+
+            e.preventDefault()
+
+            if(nameIn.value && passIn.value){
+
+                await fetch('/', {
+                    method:'POST',
+                    headers:{
+                        'Content-Type':'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: nameIn.value,
+                        password: passIn.value
+                    })
+                })
+
+                .then(response => response.json())
+                .then(data =>{
+                    data.success ? window.location.href = '/home' : respuesta.textContent = data.message
+                })
+            }
+
+
+        })
+
+    </script>
+</body>
+</html>
